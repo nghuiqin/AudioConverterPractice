@@ -9,7 +9,7 @@
 /* Begin PBXBuildFile section */
 		4406195022E02BA7008FEDE0 /* main.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4406194F22E02BA7008FEDE0 /* main.swift */; };
 		4406195722E02BD2008FEDE0 /* AVAudioFilePCMConverter.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4406195622E02BD2008FEDE0 /* AVAudioFilePCMConverter.swift */; };
-		4406195D22E05CF8008FEDE0 /* ExtAudioFileConverter.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4406195C22E05CF8008FEDE0 /* ExtAudioFileConverter.swift */; };
+		4406195D22E05CF8008FEDE0 /* ExtAudioFilePCMConverter.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4406195C22E05CF8008FEDE0 /* ExtAudioFilePCMConverter.swift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXCopyFilesBuildPhase section */
@@ -28,8 +28,7 @@
 		4406194C22E02BA7008FEDE0 /* ConverterCLI */ = {isa = PBXFileReference; explicitFileType = "compiled.mach-o.executable"; includeInIndex = 0; path = ConverterCLI; sourceTree = BUILT_PRODUCTS_DIR; };
 		4406194F22E02BA7008FEDE0 /* main.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = main.swift; sourceTree = "<group>"; };
 		4406195622E02BD2008FEDE0 /* AVAudioFilePCMConverter.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AVAudioFilePCMConverter.swift; sourceTree = "<group>"; };
-		4406195B22E033F6008FEDE0 /* bensound-summer.mp3 */ = {isa = PBXFileReference; lastKnownFileType = audio.mp3; path = "bensound-summer.mp3"; sourceTree = SOURCE_ROOT; };
-		4406195C22E05CF8008FEDE0 /* ExtAudioFileConverter.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ExtAudioFileConverter.swift; sourceTree = "<group>"; };
+		4406195C22E05CF8008FEDE0 /* ExtAudioFilePCMConverter.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ExtAudioFilePCMConverter.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -64,8 +63,7 @@
 			children = (
 				4406194F22E02BA7008FEDE0 /* main.swift */,
 				4406195622E02BD2008FEDE0 /* AVAudioFilePCMConverter.swift */,
-				4406195C22E05CF8008FEDE0 /* ExtAudioFileConverter.swift */,
-				4406195B22E033F6008FEDE0 /* bensound-summer.mp3 */,
+				4406195C22E05CF8008FEDE0 /* ExtAudioFilePCMConverter.swift */,
 			);
 			path = ConverterCLI;
 			sourceTree = "<group>";
@@ -127,7 +125,7 @@
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
-				4406195D22E05CF8008FEDE0 /* ExtAudioFileConverter.swift in Sources */,
+				4406195D22E05CF8008FEDE0 /* ExtAudioFilePCMConverter.swift in Sources */,
 				4406195722E02BD2008FEDE0 /* AVAudioFilePCMConverter.swift in Sources */,
 				4406195022E02BA7008FEDE0 /* main.swift in Sources */,
 			);

@@ -12,7 +12,12 @@ import AVFoundation
 let fileURL = URL(fileURLWithPath: "/Users/huiqinng/Downloads/bensound-summer.mp3")
 let destinationURL = URL(fileURLWithPath: "/Users/huiqinng/Downloads/test.caf")
 
-AVAudioFilePCMConverter.convertToPCMFormat(
+//AVAudioFilePCMConverter.convertToPCMFormat(
+//    fileURL: fileURL,
+//    destinationURL: destinationURL
+//)
+
+ExAudioFilePCMConverter.convertToPCMFormat(
     fileURL: fileURL,
     destinationURL: destinationURL
 )

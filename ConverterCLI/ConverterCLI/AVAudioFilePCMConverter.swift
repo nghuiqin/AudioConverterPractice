@@ -8,6 +8,10 @@
 
 import AVFoundation
 
+
+/*  Format Reference
+ *  https://developer.apple.com/library/archive/documentation/MusicAudio/Reference/CAFSpec/CAF_spec/CAF_spec.html
+ */
 struct AVAudioFilePCMConverter {
     static func convertToPCMFormat(fileURL: URL, destinationURL: URL) {
         do {
