@@ -61,13 +61,13 @@ struct ExAudioFilePCMConverter {
 
         autoreleasepool {
             let bufferSize = 4096
-            while true {
-                var bufferList = AudioBufferList()
-                bufferList.mNumberBuffers = 1
-                bufferList.mBuffers.mNumberChannels = 2
-                bufferList.mBuffers.mData = malloc(bufferSize)
-                bufferList.mBuffers.mDataByteSize = UInt32(bufferSize)
+            var bufferList = AudioBufferList()
+            bufferList.mNumberBuffers = 1
+            bufferList.mBuffers.mNumberChannels = 2
+            bufferList.mBuffers.mData = malloc(bufferSize)
+            bufferList.mBuffers.mDataByteSize = UInt32(bufferSize)
 
+            while true {
                 var numberOfFrames = UInt32(bufferSize) / destinationFormat.mBytesPerFrame
 
                 ExtAudioFileRead(sourceFile, &numberOfFrames, &bufferList)
