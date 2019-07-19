@@ -17,7 +17,8 @@ let destinationURL = URL(fileURLWithPath: "/Users/huiqinng/Downloads/test.caf")
 //    destinationURL: destinationURL
 //)
 
-ExAudioFilePCMConverter.convertToPCMFormat(
+AudioFileServicePCMConverter.convertToPCMFormat(
     fileURL: fileURL,
+    fileFormat: kAudioFileMP3Type,
     destinationURL: destinationURL
 )
