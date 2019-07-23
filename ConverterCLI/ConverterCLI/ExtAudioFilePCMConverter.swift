@@ -29,11 +29,6 @@ struct ExAudioFilePCMConverter {
         var audioFileRef: ExtAudioFileRef? = nil
         var destinationFileRef: ExtAudioFileRef? = nil
 
-        defer {
-            if destinationFileRef != nil { ExtAudioFileDispose(destinationFileRef!) }
-            if audioFileRef != nil { ExtAudioFileDispose(audioFileRef!) }
-        }
-
         ExtAudioFileOpenURL(fileURL as CFURL, &audioFileRef)
         print("ExtAudioFileOpenURL")
 
@@ -46,6 +41,7 @@ struct ExAudioFilePCMConverter {
 
         ExtAudioFileGetProperty(sourceFile, kExtAudioFileProperty_FileDataFormat, &size, &sourceFormat)
         print("ExtAudioFileGetProperty read source data format")
+        print("SourceFormat:", sourceFormat)
 
         var destinationFormat = SignedIntLinearPCMStreamDescription
         size = UInt32(MemoryLayout.stride(ofValue: destinationFormat))
@@ -59,30 +55,32 @@ struct ExAudioFilePCMConverter {
             fatalError("Can't create destination file")
         }
 
-        autoreleasepool {
-            let bufferSize = 4096
-            var bufferList = AudioBufferList()
-            bufferList.mNumberBuffers = 1
-            bufferList.mBuffers.mNumberChannels = 2
-            bufferList.mBuffers.mData = malloc(bufferSize)
-            bufferList.mBuffers.mDataByteSize = UInt32(bufferSize)
+        let bufferSize = 4096
+        var bufferList = AudioBufferList()
+        bufferList.mNumberBuffers = 1
+        bufferList.mBuffers.mNumberChannels = 2
+        bufferList.mBuffers.mData = malloc(bufferSize)
+        bufferList.mBuffers.mDataByteSize = UInt32(bufferSize)
 
-            while true {
-                var numberOfFrames = UInt32(bufferSize) / destinationFormat.mBytesPerFrame
+        while true {
+            var numberOfFrames = UInt32(bufferSize) / destinationFormat.mBytesPerFrame
 
-                ExtAudioFileRead(sourceFile, &numberOfFrames, &bufferList)
+            ExtAudioFileRead(sourceFile, &numberOfFrames, &bufferList)
 
-                if numberOfFrames == 0 {
-                    print("end of file")
-                    break
-                }
-
-                print("ExtAudioFileRead read sourceFile into buffer")
-                print("Number of frame:", numberOfFrames)
-
-                ExtAudioFileWrite(destinationFile, numberOfFrames, &bufferList)
-                print("ExtAudioFileWrite write file into destinationFile")
+            if numberOfFrames == 0 {
+                print("end of file")
+                break
             }
+
+            print("ExtAudioFileRead read sourceFile into buffer")
+            print("Number of frame:", numberOfFrames)
+
+            ExtAudioFileWrite(destinationFile, numberOfFrames, &bufferList)
+            print("ExtAudioFileWrite write file into destinationFile")
         }
+
+        free(bufferList.mBuffers.mData)
+        if destinationFileRef != nil { ExtAudioFileDispose(destinationFileRef!) }
+        if audioFileRef != nil { ExtAudioFileDispose(audioFileRef!) }
     }
 }
