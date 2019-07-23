@@ -7,15 +7,6 @@
 //
 
 import AudioToolbox
-import CommonCrypto
-
-typealias AudioConverterInputDataProc = (
-    _ converter: AudioConverterRef,
-    _ inNumberDataPackets: UnsafeMutablePointer<UInt32>,
-    _ ioData: UnsafeMutablePointer<AudioBufferList>,
-    _ outDataPacketDescription: UnsafeMutablePointer<UnsafeMutablePointer<AudioStreamPacketDescription>?>?,
-    _ inUserData: UnsafeMutableRawPointer?
-    ) -> OSStatus
 
 private let SignedIntLinearPCMStreamDescription: AudioStreamBasicDescription = {
     var destinationFormat = AudioStreamBasicDescription()
@@ -31,64 +22,142 @@ private let SignedIntLinearPCMStreamDescription: AudioStreamBasicDescription = {
     return destinationFormat
 }()
 
-private let converterInputDataProc: AudioConverterInputDataProc = { inConvertor, ioNumberDataPackets, ioData, outDataPacketDescription, inUserData in
+private let converterInputDataProc: AudioConverterComplexInputDataProc = { inConvertor, ioNumberDataPackets, ioData, outDataPacketDescription, inUserData in
+
+    let userDataPtr = inUserData!.assumingMemoryBound(to: ConverterInputUserData.self)
+    let userData = userDataPtr.pointee
+
+    // Figure out how much to read
+    let maxPackets = userData.sourceBufferSize / userData.sourceSizePerPacket
+
+    if ioNumberDataPackets.pointee > maxPackets {
+        ioNumberDataPackets.pointee = maxPackets
+    }
+
+    // read from the file
+    var outNumBytes = maxPackets * userData.sourceSizePerPacket
+
+    print("File Pointer:", userData.filePositionPointer)
+    // My issue was using pointer to set pointer =.=
+    var status = AudioFileReadPacketData(userData.sourceFileID, false, &outNumBytes, userData.packetDescriptionPointer, userData.filePositionPointer, ioNumberDataPackets, userData.bufferPointer)
+    if status == eofErr { status = noErr }
+    guard status == noErr else {
+        return status
+    }
+
+    userDataPtr.pointee.filePositionPointer += Int64(ioNumberDataPackets.pointee)
+
+    // Must write buffer into ioData pointer
+    let ioDataPtr = UnsafeMutableAudioBufferListPointer(ioData)
+    ioDataPtr[0].mData = UnsafeMutableRawPointer(userData.bufferPointer)
+    ioDataPtr[0].mNumberChannels = 0
+    ioDataPtr[0].mDataByteSize = outNumBytes
+
+    // Must set outDataPacketDescription or !pkd error
+    if let outDataPacketDescription = outDataPacketDescription {
+        if userData.packetDescriptionPointer != nil {
+            outDataPacketDescription.pointee = userData.packetDescriptionPointer
+        } else {
+            outDataPacketDescription.pointee = nil
+        }
+    }
 
     return noErr
+}
+
+private struct ConverterInputUserData {
+    var sourceFileID: AudioFileID
+    var sourceBufferSize: UInt32
+    var sourceSizePerPacket: UInt32
+    var filePositionPointer: Int64
+    var bufferPointer: UnsafeMutablePointer<CChar>
+    var packetDescriptionPointer: UnsafeMutablePointer<AudioStreamPacketDescription>?
 }
 
 struct AudioFileServicePCMConverter {
     static func convertToPCMFormat(fileURL: URL, fileFormat: AudioFileTypeID, destinationURL: URL) {
         var audioFileID: AudioFileID? = nil
-        var destinationFileID: AudioFileID? = nil
+        var destFileID: AudioFileID? = nil
         var converter: AudioConverterRef? = nil
+        let outputPacketDescriptions: UnsafeMutablePointer<AudioStreamPacketDescription>? = nil
 
-        defer {
-            if converter != nil { AudioConverterDispose(converter!) }
-        }
-
+        // Get source file
         var status = AudioFileOpenURL(fileURL as CFURL, .readPermission, fileFormat, &audioFileID)
         assert(status == noErr, "Failed to open fileURL")
 
-        guard let sourceFile = audioFileID else {
-            fatalError("No such file compatible to AudioFileID")
+        var destinationFormat = SignedIntLinearPCMStreamDescription
+        status = AudioFileCreateWithURL(destinationURL as CFURL, kAudioFileCAFType, &destinationFormat, AudioFileFlags.eraseFile, &destFileID)
+
+        guard
+            let sourceFileID = audioFileID,
+            let destinationFileID = destFileID
+        else {
+            fatalError("Failed to get sourceFileID and destinationFileID")
         }
 
         var sourceFormat = AudioStreamBasicDescription()
         var size = UInt32(MemoryLayout<AudioStreamBasicDescription>.size)
 
-        status = AudioFileGetProperty(sourceFile, kAudioFilePropertyDataFormat, &size, &sourceFormat)
+        // Get source file data format
+        status = AudioFileGetProperty(sourceFileID, kAudioFilePropertyDataFormat, &size, &sourceFormat)
         assert(status == noErr, "AudioFileGetProperty get sourcefile AudioStreamBasicDescription failed")
-
-        var destinationFormat = SignedIntLinearPCMStreamDescription
-        size = UInt32(MemoryLayout.stride(ofValue: destinationFormat))
-
-        status = AudioFileCreateWithURL(destinationURL as CFURL, kAudioFileCAFType, &destinationFormat, AudioFileFlags.eraseFile, &destinationFileID)
-        assert(status == noErr, "AudioFileCreateWithURL failed to create file")
 
         AudioConverterNew(&sourceFormat, &destinationFormat, &converter)
         guard let audioConverter = converter else {
             fatalError("Failed to new a converter")
         }
 
-        let bufferSize = 4096 * 4
-        var outputSize = UInt32(bufferSize)
+        let bufferSize = 4096
+        let outputSize = UInt32(bufferSize)
+        var sizePerPacket: UInt32 = 0
+        size = UInt32(MemoryLayout<UInt32>.size)
+        // MP3's mBytesPerPackets = 0, need get its PacketSizeUpperBound
+        status = AudioFileGetProperty(sourceFileID, kAudioFilePropertyPacketSizeUpperBound, &size, &sizePerPacket)
+        assert(status == noErr, "Failed to get MP3's kAudioFilePropertyPacketSizeUpperBound")
+
+        var outputPacketDesc = AudioStreamPacketDescription()
+        let bufferPointer = UnsafeMutablePointer<CChar>.allocate(capacity: bufferSize)
+
+        var inUserData = ConverterInputUserData(
+            sourceFileID: sourceFileID,
+            sourceBufferSize: outputSize,
+            sourceSizePerPacket: sizePerPacket,
+            filePositionPointer: 0,
+            bufferPointer: bufferPointer,
+            packetDescriptionPointer: &outputPacketDesc
+        )
+
         var bufferList = AudioBufferList()
+        bufferList.mNumberBuffers = 1
         bufferList.mBuffers.mNumberChannels = destinationFormat.mChannelsPerFrame
         bufferList.mBuffers.mData = malloc(bufferSize)
         bufferList.mBuffers.mDataByteSize = outputSize
-        let numberOfFrames = UInt32(bufferSize) / sourceFormat.mBytesPerPacket
-//        TODO: Send a buffer pointer into AudioConverterFillComplexBuffer function
-//        UnsafeMutableBufferPointer<Int>(start: &bufferList, &)
+
+        var outputFilePosition: Int64 = 0
+        var numberOutputPackets = outputSize / destinationFormat.mBytesPerPacket
 
         while true {
-//            AudioConverterFillComplexBuffer(audioConverter, converterInputDataProc, /* TODO */, &outputSize, &bufferList, &destinationFormat)
-            if numberOfFrames == 0 {
+            status = AudioConverterFillComplexBuffer(audioConverter, converterInputDataProc, &inUserData, &numberOutputPackets, &bufferList, outputPacketDescriptions)
+            assert(status == noErr, "AudioConverterFillComplexBuffer failed")
+
+            print("Number outputPackets:", numberOutputPackets)
+            print("OutputFilePosition", outputFilePosition)
+            if numberOutputPackets == 0 {
                 print("EOF")
                 break
             }
+
+            let inNumBytes = bufferList.mBuffers.mDataByteSize
+            status = AudioFileWritePackets(destinationFileID, false, inNumBytes, outputPacketDescriptions, outputFilePosition, &numberOutputPackets, bufferList.mBuffers.mData!)
+            assert(status == noErr, "AudioFileWritePackets failed")
+
+            outputFilePosition += Int64(numberOutputPackets)
         }
 
         free(bufferList.mBuffers.mData)
+        bufferPointer.deallocate()
+        AudioFileClose(sourceFileID)
+        AudioFileClose(destinationFileID)
+        if converter != nil { AudioConverterDispose(converter!) }
     }
-
 }

@@ -10,6 +10,7 @@
 		4406195022E02BA7008FEDE0 /* main.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4406194F22E02BA7008FEDE0 /* main.swift */; };
 		4406195722E02BD2008FEDE0 /* AVAudioFilePCMConverter.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4406195622E02BD2008FEDE0 /* AVAudioFilePCMConverter.swift */; };
 		4406195D22E05CF8008FEDE0 /* ExtAudioFilePCMConverter.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4406195C22E05CF8008FEDE0 /* ExtAudioFilePCMConverter.swift */; };
+		4406196022E1A3DB008FEDE0 /* AudioFileServicePCMConverter.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4406195F22E1A3DB008FEDE0 /* AudioFileServicePCMConverter.swift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXCopyFilesBuildPhase section */
@@ -29,6 +30,7 @@
 		4406194F22E02BA7008FEDE0 /* main.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = main.swift; sourceTree = "<group>"; };
 		4406195622E02BD2008FEDE0 /* AVAudioFilePCMConverter.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AVAudioFilePCMConverter.swift; sourceTree = "<group>"; };
 		4406195C22E05CF8008FEDE0 /* ExtAudioFilePCMConverter.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ExtAudioFilePCMConverter.swift; sourceTree = "<group>"; };
+		4406195F22E1A3DB008FEDE0 /* AudioFileServicePCMConverter.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AudioFileServicePCMConverter.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -64,6 +66,7 @@
 				4406194F22E02BA7008FEDE0 /* main.swift */,
 				4406195622E02BD2008FEDE0 /* AVAudioFilePCMConverter.swift */,
 				4406195C22E05CF8008FEDE0 /* ExtAudioFilePCMConverter.swift */,
+				4406195F22E1A3DB008FEDE0 /* AudioFileServicePCMConverter.swift */,
 			);
 			path = ConverterCLI;
 			sourceTree = "<group>";
@@ -125,6 +128,7 @@
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				4406196022E1A3DB008FEDE0 /* AudioFileServicePCMConverter.swift in Sources */,
 				4406195D22E05CF8008FEDE0 /* ExtAudioFilePCMConverter.swift in Sources */,
 				4406195722E02BD2008FEDE0 /* AVAudioFilePCMConverter.swift in Sources */,
 				4406195022E02BA7008FEDE0 /* main.swift in Sources */,
