@@ -42,9 +42,11 @@ private let converterInputDataProc: AudioConverterComplexInputDataProc = { inCon
     var status = AudioFileReadPacketData(userData.sourceFileID, false, &outNumBytes, userData.packetDescriptionPointer, userData.filePositionPointer, ioNumberDataPackets, userData.bufferPointer)
     if status == eofErr { status = noErr }
     guard status == noErr else {
+        print("AudioFileReadPacketData failed")
         return status
     }
 
+    // Have to use userDataPtr rather than userData, if not filePositionPointer value will not be referenced.
     userDataPtr.pointee.filePositionPointer += Int64(ioNumberDataPackets.pointee)
 
     // Must write buffer into ioData pointer
@@ -79,9 +81,8 @@ struct AudioFileServicePCMConverter {
         var audioFileID: AudioFileID? = nil
         var destFileID: AudioFileID? = nil
         var converter: AudioConverterRef? = nil
-        let outputPacketDescriptions: UnsafeMutablePointer<AudioStreamPacketDescription>? = nil
 
-        // Get source file
+        print("Get sourceFileID & destinationFileID")
         var status = AudioFileOpenURL(fileURL as CFURL, .readPermission, fileFormat, &audioFileID)
         assert(status == noErr, "Failed to open fileURL")
 
@@ -98,10 +99,11 @@ struct AudioFileServicePCMConverter {
         var sourceFormat = AudioStreamBasicDescription()
         var size = UInt32(MemoryLayout<AudioStreamBasicDescription>.size)
 
-        // Get source file data format
+        print("Get sourceFile format")
         status = AudioFileGetProperty(sourceFileID, kAudioFilePropertyDataFormat, &size, &sourceFormat)
         assert(status == noErr, "AudioFileGetProperty get sourcefile AudioStreamBasicDescription failed")
 
+        print("Create converter with both sourceFormat & destinationFormat")
         AudioConverterNew(&sourceFormat, &destinationFormat, &converter)
         guard let audioConverter = converter else {
             fatalError("Failed to new a converter")
@@ -109,6 +111,8 @@ struct AudioFileServicePCMConverter {
 
         let bufferSize = 4096
         let outputSize = UInt32(bufferSize)
+
+        print("Get MP3 packet size upperBound")
         var sizePerPacket: UInt32 = 0
         size = UInt32(MemoryLayout<UInt32>.size)
         // MP3's mBytesPerPackets = 0, need get its PacketSizeUpperBound
@@ -137,7 +141,7 @@ struct AudioFileServicePCMConverter {
         var numberOutputPackets = outputSize / destinationFormat.mBytesPerPacket
 
         while true {
-            status = AudioConverterFillComplexBuffer(audioConverter, converterInputDataProc, &inUserData, &numberOutputPackets, &bufferList, outputPacketDescriptions)
+            status = AudioConverterFillComplexBuffer(audioConverter, converterInputDataProc, &inUserData, &numberOutputPackets, &bufferList, nil)
             assert(status == noErr, "AudioConverterFillComplexBuffer failed")
 
             print("Number outputPackets:", numberOutputPackets)
@@ -148,7 +152,7 @@ struct AudioFileServicePCMConverter {
             }
 
             let inNumBytes = bufferList.mBuffers.mDataByteSize
-            status = AudioFileWritePackets(destinationFileID, false, inNumBytes, outputPacketDescriptions, outputFilePosition, &numberOutputPackets, bufferList.mBuffers.mData!)
+            status = AudioFileWritePackets(destinationFileID, false, inNumBytes, inUserData.packetDescriptionPointer, outputFilePosition, &numberOutputPackets, bufferList.mBuffers.mData!)
             assert(status == noErr, "AudioFileWritePackets failed")
 
             outputFilePosition += Int64(numberOutputPackets)
